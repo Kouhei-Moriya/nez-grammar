@@ -98,7 +98,8 @@ addMultipleLHSList                   = ( $(LHSListItem) _ ',' __ )+
 LHSListItem                          = LeftHandSideExpression
                                      / GroupingLHSExpression
 LHSExpandExpression                  = { '*' $(LeftHandSideExpression)? #Sprat }
-GroupingLHSExpression                = '(' __ MultipleLeftHandSideExpression __ ')'
+GroupingLHSExpression                = { '(' __ $(MultipleLeftHandSideExpression) __ ')' #Grouping }
+// GroupingLHSExpression             = '(' __ MultipleLeftHandSideExpression __ ')' //FIXME: avoid incorrect warning
 RightHandSideExpression              = CommandCallExpression
                                      / OperatorExpression
 MultipleRightHandSideExpression      = { addOperatorExpressions ( _ ',' __ $(SplattingArgument) )? #MultipleRightHandSideExpression }
@@ -115,9 +116,9 @@ KeywordNotExpression                 = { "not" #Not __ $(KeywordNotExpression) }
                                      / OperatorExpression
 CommandCallExpression                = <on !WithDoBlock Command>
                                      / ChainedCommand {$ __ <on !WithParentheses addCommandCall> }?
-                                     / <on WithArgs ReturnExpression>
-                                     / <on WithArgs BreakExpression>
-                                     / <on WithArgs NextExpression>
+//                                   / <on WithArgs ReturnExpression> //FIXME: conflicts with decoration statement
+//                                   / <on WithArgs BreakExpression>
+//                                   / <on WithArgs NextExpression>
 Command                              = { $(DummySelf) $(MethodOnlyName) __ $(<on !WithParentheses Arguments>) addDoBlock #Apply }
                                      / { $(DummySelf) $(Identifier) __ $(<on !WithParentheses Arguments>) addDoBlock #Apply }
                                      / PrimaryExpression {$ addCall &( _ ('.' / '::') ) }* {$ <on !WithParentheses addCommandCall> addDoBlock }
@@ -199,9 +200,12 @@ StatementLikeExpression              = IfExpression
                                      / CaseExpression
                                      / BeginExpression
                                      / <on !RequireArgs YieldExpression>
-                                     / <on !WithArgs ReturnExpression>
-                                     / <on !WithArgs BreakExpression>
-                                     / <on !WithArgs NextExpression>
+                                     / ReturnExpression
+                                     / BreakExpression
+                                     / NextExpression
+//                                   / <on !WithArgs ReturnExpression> //FIXME: avoid infinite loop
+//                                   / <on !WithArgs BreakExpression>
+//                                   / <on !WithArgs NextExpression>
                                      / RedoExpression
                                      / RetryExpression
                                      / ClassExpression
@@ -242,12 +246,15 @@ SuperExpression                      = <if RequireArgs> { "super" __ $(<on !With
 Super                                = { "super" #Super }
 YieldExpression                      = <if RequireArgs> { "yield" __ $(<on !WithParentheses Arguments>) #Redo }
                                      / <if !RequireArgs> { "yield" ( __ '(' __ $({ addArgumentList? #List }) __ ')' )? #Redo }
-ReturnExpression                     = <if WithArgs> { "return" _ addArgumentList #Return }
-                                     / <if !WithArgs> { "return" #Return }
-BreakExpression                      = <if WithArgs> { "break" _ addArgumentList #Return }
-                                     / <if !WithArgs> { "break" #Return }
-NextExpression                       = <if WithArgs> { "next" _ addArgumentList #Return }
-                                     / <if !WithArgs> { "next" #Return }
+ReturnExpression                     = { "return" #Return }
+BreakExpression                      = { "break" #Break }
+NextExpression                       = { "next" #Next }
+// ReturnExpression                  = <if WithArgs> { "return" _ addArgumentList #Return } //FIXME: avoid infinite loop
+//                                   / <if !WithArgs> { "return" #Return }
+// BreakExpression                   = <if WithArgs> { "break" _ addArgumentList #Break }
+//                                   / <if !WithArgs> { "break" #Break }
+// NextExpression                    = <if WithArgs> { "next" _ addArgumentList #Next }
+//                                   / <if !WithArgs> { "next" #Next }
 RedoExpression                       = { "redo"  #Redo }
 RetryExpression                      = { "retry" #Retry }
 
