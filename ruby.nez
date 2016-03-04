@@ -27,8 +27,8 @@ Block                                = DoEndBlock
                                      / BraceBlock
 DoEndBlock                           = { "do" __ $(BlockParameter)? __ $(CompleteStatement) __ "end" #Block }
 BraceBlock                           = { '{' __ $(BlockParameter)? __ $(CompleteStatement) __ '}' #Block }
-BlockParameter                       = '||'
-                                     / '|' __ BlockVar? __ '|'
+BlockParameter                       = '||' { #Empty }
+                                     / '|' __ ( BlockVar / { #Empty } ) __ '|'
 BlockVar                             = MultipleLeftHandSideExpression
                                      / LeftHandSideExpression
 BodyStatement                        = { addBodyStatements #Begin }
